@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AquaCalc Pro — Kalkulus Terapan Kolam Renang</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Outfit:wght@300;400;500;600&family=JetBrains+Mono:wght@400;600;700&display=swap');
+ 
+:root {
+  --deep:   #03111c; --abyss:  #061a28; --ocean:  #0a4d68; --mid:    #0e6e90;
+  --sky:    #00b4d8; --foam:   #90e0ef; --mist:   #caf0f8; --sand:   #fdf0d5;
+  --gold:   #ffd166; --coral:  #ef476f; --mint:   #06d6a0; --white:  #f0f8ff;
+  --glass:  rgba(255,255,255,0.05); --glass2: rgba(255,255,255,0.08);
+  --border: rgba(0,180,216,0.18); --border2: rgba(0,180,216,0.35);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html { scroll-behavior: smooth; }
+body {
+  background: var(--deep); color: var(--white); font-family: 'Outfit', sans-serif;
+  min-height: 100vh; overflow-x: hidden;
+}
+.bg-layer {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: radial-gradient(ellipse 80% 60% at 10% 40%, rgba(0,180,216,0.12) 0%, transparent 70%),
+    radial-gradient(ellipse 60% 50% at 90% 70%, rgba(10,77,104,0.2) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 30% at 50% 10%, rgba(6,214,160,0.06) 0%, transparent 50%);
+}
+.bubbles { position:fixed; inset:0; z-index:0; pointer-events:none; overflow:hidden; }
+.bubble {
+  position:absolute; border-radius:50%;
+  background: radial-gradient(circle at 30% 30%, rgba(144,224,239,0.3), rgba(0,180,216,0.05));
+  border: 1px solid rgba(0,180,216,0.15); animation: floatUp linear infinite;
+}
+@keyframes floatUp {
+  0% { transform: translateY(0) scale(1); opacity:0.6; }
+  100% { transform: translateY(-100vh) scale(0.5); opacity:0; }
+}
+.sidebar {
+  position: fixed; left:0; top:0; bottom:0; width: 220px;
+  background: rgba(6,26,40,0.95); border-right: 1px solid var(--border);
+  backdrop-filter: blur(20px); z-index: 100; display: flex; flex-direction:column; padding: 24px 0;
+}
+.sidebar-logo { padding: 0 20px 24px; border-bottom: 1px solid var(--border); margin-bottom: 16px; }
+.sidebar-logo .logo-icon { font-size: 28px; display: block; margin-bottom: 6px; }
+.sidebar-logo h2 {
+  font-family: 'Syne', sans-serif; font-size: 1.3rem; font-weight: 800; letter-spacing: 1px;
+  background: linear-gradient(135deg, var(--sky), var(--mint));
+   background-clip: text;
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.sidebar-logo p { font-size: 0.65rem; color: var(--foam); opacity: 0.5; margin-top: 2px; font-family: 'JetBrains Mono', monospace; }
+.nav-section {
+  padding: 8px 12px 4px 20px; font-size: 0.6rem; text-transform: uppercase; letter-spacing: 2px;
+  color: var(--sky); opacity: 0.6; font-family: 'JetBrains Mono', monospace; margin-top: 8px;
+}
+.nav-item {
+  display: flex; align-items: center; gap: 10px; padding: 10px 20px; cursor: pointer;
+  color: rgba(255,255,255,0.45); font-size: 0.85rem; font-weight: 500; transition: all 0.25s;
+  border-left: 2px solid transparent; position: relative;
+}
+.nav-item .nav-icon { font-size:16px; width:20px; text-align:center; flex-shrink:0; }
+.nav-item:hover { color: var(--foam); background: rgba(0,180,216,0.06); }
+.nav-item.active { color: var(--sky); border-left-color: var(--sky); background: rgba(0,180,216,0.1); }
+.sidebar-footer {
+  margin-top: auto; padding: 16px 20px; border-top: 1px solid var(--border);
+  font-size: 0.7rem; color: rgba(255,255,255,0.25); font-style: italic;
+}
+.main { margin-left: 220px; min-height: 100vh; position: relative; z-index: 1; }
+.page-header {
+  padding: 40px 48px 28px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: 16px;
+}
+.page-header h1 { font-family: 'Syne', sans-serif; font-size: 2rem; font-weight: 800; letter-spacing: -0.5px; }
+.page-header p { font-size: 0.85rem; color: rgba(255,255,255,0.45); margin-top: 4px; font-weight: 300; }
+.chip {
+  background: rgba(0,180,216,0.12); border: 1px solid rgba(0,180,216,0.3); border-radius: 20px;
+  padding: 6px 14px; font-size: 0.75rem; color: var(--sky); font-family: 'JetBrains Mono', monospace; letter-spacing: 0.5px;
+}
+.section { display:none; padding: 40px 48px 80px; animation: fadeUp 0.4s ease; }
+.section.active { display:block; }
+@keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+.card {
+  background: var(--glass2); border: 1px solid var(--border); border-radius: 20px;
+  padding: 28px 32px; backdrop-filter: blur(12px); transition: border-color 0.3s, transform 0.3s;
+}
+.card:hover { border-color: var(--border2); }
+.card-header {
+  display: flex; align-items: center; gap: 12px; margin-bottom: 24px;
+  padding-bottom: 16px; border-bottom: 1px solid var(--border);
+}
+.card-icon {
+  width: 40px; height: 40px; background: linear-gradient(135deg, var(--sky), var(--ocean));
+  border-radius: 10px; display: flex; align-items: center; justify-content: center;
+  font-size: 18px; flex-shrink: 0; box-shadow: 0 4px 16px rgba(0,180,216,0.3);
+}
+.card-title { font-family: 'Syne', sans-serif; font-size: 1rem; font-weight: 700; letter-spacing: 0.3px; }
+.card-sub { font-size: 0.75rem; color: rgba(255,255,255,0.4); margin-top: 2px; }
+.g2 { display:grid; grid-template-columns:1fr 1fr; gap:24px; }
+.g3 { display:grid; grid-template-columns:repeat(3,1fr); gap:20px; }
+.g4 { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; }
+@media(max-width:900px){ .g2,.g3,.g4{grid-template-columns:1fr;} }
+.field { margin-bottom: 18px; }
+label {
+  display:block; font-size:0.72rem; font-weight:600; text-transform:uppercase; letter-spacing:1.2px;
+  color:var(--foam); opacity:0.7; margin-bottom:7px;
+}
+input[type="number"], input[type="text"], select, textarea {
+  width:100%; background: rgba(0,0,0,0.35); border: 1px solid var(--border); border-radius: 10px;
+  padding: 11px 16px; color: var(--white); font-family: 'JetBrains Mono', monospace;
+  font-size: 0.9rem; outline: none; transition: border-color 0.3s, box-shadow 0.3s;
+}
+input:focus, select:focus, textarea:focus { border-color: var(--sky); box-shadow: 0 0 0 3px rgba(0,180,216,0.12); }
+select option { background: var(--abyss); }
+textarea { resize:vertical; min-height:80px; line-height:1.6; }
+input[type="range"] { width: 100%; accent-color: var(--sky); background: transparent; border: none; padding: 4px 0; cursor: pointer; }
+.range-row { display:flex; align-items:center; gap:12px; }
+.range-val { font-family:'JetBrains Mono',monospace; font-size:0.85rem; color:var(--gold); min-width:48px; text-align:right; }
+.btn {
+  padding: 12px 24px; border: none; border-radius: 12px; font-family: 'Outfit', sans-serif;
+  font-size: 0.9rem; font-weight: 600; cursor: pointer; letter-spacing: 0.3px; transition: all 0.3s;
+}
+.btn-primary {
+  background: linear-gradient(135deg, var(--sky), var(--ocean)); color: #fff;
+  box-shadow: 0 4px 20px rgba(0,180,216,0.3); width: 100%;
+}
+.btn-primary:hover { transform:translateY(-2px); box-shadow:0 8px 28px rgba(0,180,216,0.45); }
+.btn-secondary { background: var(--glass2); border:1px solid var(--border); color: var(--foam); width:100%; }
+.btn-secondary:hover { border-color:var(--border2); }
+.btn-mint {
+  background: linear-gradient(135deg, var(--mint), #04a87e); color: var(--deep); font-weight:700; width:100%;
+  box-shadow: 0 4px 20px rgba(6,214,160,0.25);
+}
+.btn-mint:hover { transform:translateY(-2px); }
+.btn-coral { background: linear-gradient(135deg, var(--coral), #c5234a); color: #fff; font-weight:700; }
+.stat-box {
+  background: rgba(0,0,0,0.25); border: 1px solid var(--border); border-radius: 14px;
+  padding: 20px; text-align: center; transition: all 0.3s;
+}
+.stat-box:hover { border-color:var(--border2); transform:translateY(-2px); }
+.stat-val { font-family: 'JetBrains Mono', monospace; font-size: 1.8rem; font-weight: 700; color: var(--gold); display: block; line-height: 1.1; }
+.stat-unit { font-size: 0.7rem; color:var(--sky); font-family:'JetBrains Mono',monospace; margin-bottom: 4px; display:block; }
+.stat-label { font-size: 0.72rem; color:rgba(255,255,255,0.45); text-transform:uppercase; letter-spacing:1px; margin-top:6px; }
+.formula {
+  background: rgba(0,0,0,0.4); border-left: 3px solid var(--sky); border-radius: 0 12px 12px 0;
+  padding: 16px 20px; font-family: 'JetBrains Mono', monospace; font-size: 0.83rem;
+  color: var(--foam); line-height: 2; margin: 16px 0;
+}
+.formula .hl { color: var(--gold); font-weight:700; }
+.formula .vr { color: var(--sky); }
+.formula .gr { color: var(--mint); }
+.formula .cr { color: var(--coral); }
+.theory-block {
+  background: var(--glass); border: 1px solid var(--border); border-radius: 16px;
+  padding: 24px 28px; margin-bottom: 20px;
+}
+.theory-block h3 {
+  font-family:'Syne',sans-serif; font-size:1.1rem; font-weight:700; color:var(--sky); margin-bottom:12px;
+  display:flex; align-items:center; gap:10px;
+}
+.theory-block p { font-size:0.875rem; line-height:1.9; color:rgba(255,255,255,0.7); margin-bottom:10px; }
+.step-list { list-style:none; counter-reset:s; }
+.step-list li {
+  counter-increment:s; display:flex; gap:16px; padding:14px 0; border-bottom:1px solid var(--border);
+  font-size:0.85rem; color:rgba(255,255,255,0.7); line-height:1.7; align-items:flex-start;
+}
+.step-list li::before {
+  content:counter(s); min-width:30px; height:30px; background:linear-gradient(135deg,var(--sky),var(--ocean));
+  border-radius:50%; display:flex; align-items:center; justify-content:center;
+  font-family:'JetBrains Mono',monospace; font-size:0.75rem; font-weight:700; color:#fff; flex-shrink:0;
+}
+.concept-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-top:16px; }
+@media(max-width:800px){ .concept-grid{grid-template-columns:1fr;} }
+.concept-card {
+  background: rgba(0,0,0,0.25); border:1px solid var(--border); border-radius:14px; padding:18px;
+  text-align:center; transition:all 0.3s;
+}
+.concept-card:hover { border-color:var(--border2); transform:translateY(-3px); }
+.concept-card .emoji { font-size:2rem; margin-bottom:10px; }
+.concept-card h4 { font-family:'Syne',sans-serif; font-size:0.9rem; font-weight:700; color:var(--sky); margin-bottom:8px; }
+.concept-card p  { font-size:0.78rem; color:rgba(255,255,255,0.55); line-height:1.7; }
+.pool-canvas-wrap { border-radius:14px; overflow:hidden; border:1px solid var(--border); background:rgba(0,0,0,0.3); margin-bottom:16px; }
+.inner-tabs {
+  display:flex; gap:4px; background:rgba(0,0,0,0.3); border:1px solid var(--border);
+  border-radius:10px; padding:4px; margin-bottom:20px;
+}
+.inner-tab {
+  flex:1; padding:9px 12px; background:transparent; border:none; color:rgba(255,255,255,0.4);
+  font-family:'Outfit',sans-serif; font-size:0.8rem; font-weight:600; cursor:pointer; border-radius:7px; transition:all 0.25s;
+}
+.inner-tab.active { background:linear-gradient(135deg,var(--sky),var(--ocean)); color:#fff; box-shadow:0 3px 12px rgba(0,180,216,0.3); }
+.info-hl {
+  background:rgba(255,209,102,0.07); border:1px solid rgba(255,209,102,0.2);
+  border-radius:12px; padding:14px 18px; font-size:0.83rem; color:rgba(255,255,255,0.7); line-height:1.8;
+}
+.info-hl strong { color:var(--gold); }
+.info-mint {
+  background:rgba(6,214,160,0.07); border:1px solid rgba(6,214,160,0.2);
+  border-radius:12px; padding:14px 18px; font-size:0.83rem; color:rgba(255,255,255,0.7); line-height:1.8;
+}
+.info-mint strong { color:var(--mint); }
+.unit-row { display:flex; align-items:center; gap:12px; margin-bottom:14px; }
+.unit-row .arrow { color:var(--sky); font-size:1.2rem; flex-shrink:0; }
+.unit-row input { flex:1; }
+.unit-label { font-size:0.78rem; color:rgba(255,255,255,0.45); min-width:60px; }
+.progress-wrap { background:rgba(0,0,0,0.3); border-radius:100px; height:8px; overflow:hidden; margin-top:8px; }
+.progress-bar { height:100%; border-radius:100px; background:linear-gradient(90deg,var(--sky),var(--mint)); transition:width 0.8s cubic-bezier(0.4,0,0.2,1); }
+.section-tag {
+  font-family:'JetBrains Mono',monospace; font-size:0.65rem; letter-spacing:2px;
+  text-transform:uppercase; color:var(--sky); opacity:0.5; margin-bottom:8px;
+}
+.sep { height:1px; background:var(--border); margin:24px 0; }
+.result-panel {
+  background:rgba(0,180,216,0.07); border:1px solid rgba(0,180,216,0.25);
+  border-radius:16px; padding:24px; margin-top:20px; display:none;
+}
+.result-panel.show { display:block; animation:fadeUp 0.4s ease; }
+.data-table { width:100%; border-collapse:collapse; font-size:0.83rem; }
+.data-table th {
+  text-align:left; padding:10px 14px; background:rgba(0,0,0,0.3);
+  color:var(--sky); font-family:'JetBrains Mono',monospace;
+  font-size:0.72rem; letter-spacing:1px; text-transform:uppercase; border-bottom:1px solid var(--border);
+}
+.data-table td { padding:10px 14px; border-bottom:1px solid rgba(255,255,255,0.05); color:rgba(255,255,255,0.7); }
+.data-table tr:hover td { background:rgba(0,180,216,0.05); }
+.log-item {
+  display:flex; justify-content:space-between; align-items:center; padding:12px 16px;
+  border:1px solid var(--border); border-radius:10px; margin-bottom:8px;
+  background:rgba(0,0,0,0.2); font-size:0.82rem;
+}
+.log-item .log-name { color:var(--foam); font-weight:600; }
+.log-item .log-val  { font-family:'JetBrains Mono',monospace; color:var(--gold); }
+.log-item .log-time { font-size:0.7rem; color:rgba(255,255,255,0.3); }
+@media(max-width:768px){
+  .sidebar { transform:translateX(-100%); } .main { margin-left:0; }
+  .section { padding:24px 20px 60px; } .page-header { padding:24px 20px 20px; }
+  .g2,.g3,.g4 { grid-template-columns:1fr; } .concept-grid { grid-template-columns:1fr; }
+}
+::-webkit-scrollbar { width:6px; }
+::-webkit-scrollbar-track { background:var(--abyss); }
+::-webkit-scrollbar-thumb { background:var(--ocean); border-radius:3px; }
+.pill {
+  display:inline-block; padding:3px 10px; background:rgba(0,180,216,0.15);
+  border:1px solid rgba(0,180,216,0.25); border-radius:20px;
+  font-size:0.7rem; color:var(--sky); font-family:'JetBrains Mono',monospace; margin:3px;
+}
+.pill.gold { background:rgba(255,209,102,0.12); border-color:rgba(255,209,102,0.25); color:var(--gold); }
+.pill.mint { background:rgba(6,214,160,0.12); border-color:rgba(6,214,160,0.25); color:var(--mint); }
+</style>
+</head>
+<body>
+<div class="bg-layer"></div>
+<div class="bubbles" id="bubblesContainer"></div>
+
+<!-- SIDEBAR -->
+<nav class="sidebar">
+  <div class="sidebar-logo">
+    <span class="logo-icon">🏊</span><h2>AquaCalc</h2><p>v2.0 · Kalkulus Terapan</p>
+  </div>
+  <div class="nav-section">Utama</div>
+  <div class="nav-item active" onclick="showSection('beranda',this)"><span class="nav-icon">🏠</span> Beranda</div>
+  <div class="nav-item" onclick="showSection('kalkulator',this)"><span class="nav-icon">🧮</span> Kalkulator</div>
+  <div class="nav-item" onclick="showSection('integral',this)"><span class="nav-icon">∫</span> Visualisasi Integral</div>
+  <div class="nav-section">Pembelajaran</div>
+  <div class="nav-item" onclick="showSection('konsep',this)"><span class="nav-icon">📐</span> Konsep Dasar</div>
+  <div class="nav-item" onclick="showSection('rumus',this)"><span class="nav-icon">📋</span> Kumpulan Rumus</div>
+  <div class="nav-section">Alat Bantu</div>
+  <div class="nav-item" onclick="showSection('konversi',this)"><span class="nav-icon">🔄</span> Konversi Satuan</div>
+  <div class="nav-item" onclick="showSection('perbandingan',this)"><span class="nav-icon">📊</span> Perbandingan Kolam</div>
+  <div class="nav-item" onclick="showSection('riwayat',this)"><span class="nav-icon">📜</span> Riwayat Hitung</div>
+  <div class="sidebar-footer">· Media Pembelajaran<br></div>
+</nav>
+
+<!-- MAIN CONTENT -->
+<div class="main">
+
+<!-- BERANDA -->
+<div class="section active" id="sec-beranda">
+  <div class="page-header">
+    <div><div class="section-tag">// Beranda</div><h1>Selamat Datang di AquaCalc Pro</h1><p>Aplikasi pembelajaran kalkulus integral berbasis konteks kolam renang</p></div>
+    <div class="chip">Kalkulus Terapan</div>
+  </div>
+  <div style="padding:40px 48px 80px;">
+    <div class="g4" style="margin-bottom:32px;">
+      <div class="stat-box"><span class="stat-unit">Modul</span><span class="stat-val">6</span><div class="stat-label">Fitur Lengkap</div><div class="progress-wrap" style="margin-top:12px;"><div class="progress-bar" style="width:100%"></div></div></div>
+      <div class="stat-box"><span class="stat-unit">Rumus</span><span class="stat-val">12+</span><div class="stat-label">Formula Integral</div><div class="progress-wrap" style="margin-top:12px;"><div class="progress-bar" style="width:90%;background:linear-gradient(90deg,var(--mint),var(--sky))"></div></div></div>
+      <div class="stat-box"><span class="stat-unit">Bentuk</span><span class="stat-val">3</span><div class="stat-label">Jenis Kolam</div><div class="progress-wrap" style="margin-top:12px;"><div class="progress-bar" style="width:80%;background:linear-gradient(90deg,var(--gold),var(--coral))"></div></div></div>
+      <div class="stat-box"><span class="stat-unit">Satuan</span><span class="stat-val">8</span><div class="stat-label">Unit Konversi</div><div class="progress-wrap" style="margin-top:12px;"><div class="progress-bar" style="width:70%;background:linear-gradient(90deg,var(--coral),var(--gold))"></div></div></div>
+    </div>
+    <div class="g3" style="margin-bottom:32px;">
+      <div class="card" style="cursor:pointer;" onclick="showSection('kalkulator',document.querySelectorAll('.nav-item')[1])">
+        <div class="card-header"><div class="card-icon">🧮</div><div><div class="card-title">Kalkulator Integral</div><div class="card-sub">Hitung volume & luas kolam</div></div></div>
+        <p style="font-size:0.83rem;color:rgba(255,255,255,0.55);line-height:1.8;">Masukkan dimensi kolam dan hitung secara otomatis menggunakan integral tentu. Mendukung 3 bentuk kolam berbeda.</p>
+        <div style="margin-top:16px;"><span class="pill">Persegi Panjang</span><span class="pill">Oval</span><span class="pill">Bentuk L</span></div>
+      </div>
+      <div class="card" style="cursor:pointer;" onclick="showSection('integral',document.querySelectorAll('.nav-item')[2])">
+        <div class="card-header"><div class="card-icon" style="background:linear-gradient(135deg,var(--mint),#04a87e);">∫</div><div><div class="card-title">Visualisasi Integral</div><div class="card-sub">Grafik interaktif real-time</div></div></div>
+        <p style="font-size:0.83rem;color:rgba(255,255,255,0.55);line-height:1.8;">Lihat grafik fungsi kedalaman kolam dan area yang diintegralkan secara visual dan dinamis saat parameter diubah.</p>
+        <div style="margin-top:16px;"><span class="pill mint">Grafik Dinamis</span><span class="pill mint">Area Integral</span></div>
+      </div>
+      <div class="card" style="cursor:pointer;" onclick="showSection('konsep',document.querySelectorAll('.nav-item')[3])">
+        <div class="card-header"><div class="card-icon" style="background:linear-gradient(135deg,var(--gold),#e0900a);">📐</div><div><div class="card-title">Konsep Dasar</div><div class="card-sub">Teori integral lengkap</div></div></div>
+        <p style="font-size:0.83rem;color:rgba(255,255,255,0.55);line-height:1.8;">Pelajari konsep integral Riemann, teorema kalkulus dasar, dan aplikasinya dalam perhitungan geometri kolam.</p>
+        <div style="margin-top:16px;"><span class="pill gold">Riemann</span><span class="pill gold">FTC</span><span class="pill gold">Aplikasi</span></div>
+      </div>
+    </div>
+    <div class="g2">
+      <div class="card">
+        <div class="card-header"><div class="card-icon" style="background:linear-gradient(135deg,var(--coral),#c5234a);">ℹ️</div><div><div class="card-title">Tentang Aplikasi</div></div></div>
+        <p style="font-size:0.85rem;color:rgba(255,255,255,0.65);line-height:1.9;margin-bottom:14px;"><strong style="color:var(--sky)">AquaCalc Pro</strong> adalah media pembelajaran interaktif berbasis konteks nyata. Kolam renang dipilih sebagai objek karena memiliki geometri yang dapat dimodelkan secara matematis menggunakan <strong style="color:var(--gold)">integral tentu</strong>.</p>
+        <p style="font-size:0.85rem;color:rgba(255,255,255,0.65);line-height:1.9;">Aplikasi ini membantu mahasiswa memahami hubungan antara konsep abstrak integral dengan aplikasi nyata di bidang teknik sipil dan konstruksi bangunan.</p>
+        <div class="sep"></div>
+        <div class="info-mint"><strong>Kompetensi yang Dicapai:</strong><br>Memahami konsep integral tentu · Memodelkan masalah nyata dengan fungsi · Menghitung volume menggunakan integral · Menginterpretasikan hasil secara kontekstual</div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-icon" style="background:linear-gradient(135deg,#a78bfa,#7c3aed);">🎯</div><div><div class="card-title">Panduan Penggunaan</div></div></div>
+        <ul class="step-list">
+          <li>Mulai dari <strong style="color:var(--sky)">Konsep Dasar</strong> untuk memahami teori integral tentu dan aplikasinya.</li>
+          <li>Buka <strong style="color:var(--sky)">Kumpulan Rumus</strong> sebagai referensi formula yang digunakan.</li>
+          <li>Gunakan <strong style="color:var(--sky)">Kalkulator</strong> untuk menghitung volume dan luas kolam dengan integral.</li>
+          <li>Eksplorasi <strong style="color:var(--sky)">Visualisasi Integral</strong> untuk memahami makna geometris integral.</li>
+          <li>Gunakan <strong style="color:var(--sky)">Perbandingan Kolam</strong> untuk menganalisis dua konfigurasi kolam berbeda.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- KALKULATOR -->
+<div class="section" id="sec-kalkulator">
+  <div class="page-header"><div><div class="section-tag">// Kalkulator Integral</div><h1>Perhitungan Kolam Renang</h1><p>Hitung volume, luas, dan kebutuhan material kolam renang menggunakan integral tentu</p></div></div>
+  <div style="padding:40px 48px 80px;">
+    <div class="g2">
+      <div>
+        <div class="card" style="margin-bottom:24px;">
+          <div class="card-header"><div class="card-icon">📏</div><div><div class="card-title">Dimensi Kolam</div><div class="card-sub">Masukkan ukuran kolam renang</div></div></div>
+          <div class="field"><label>Bentuk Kolam</label><select id="c-shape" onchange="toggleShapeFields()"><option value="rect">Persegi Panjang (Standar)</option><option value="oval">Oval / Elips</option><option value="lshape">Bentuk L (Kombinasi)</option></select></div>
+          <div id="c-rect-fields"><div class="g2"><div class="field"><label>Panjang L (m)</label><input type="number" id="c-L" value="25" min="1" step="0.5"></div><div class="field"><label>Lebar W (m)</label><input type="number" id="c-W" value="10" min="1" step="0.5"></div></div></div>
+          <div id="c-oval-fields" style="display:none"><div class="g2"><div class="field"><label>Semi-sumbu a (m)</label><input type="number" id="c-a" value="12" min="1" step="0.5"></div><div class="field"><label>Semi-sumbu b (m)</label><input type="number" id="c-b" value="5" min="1" step="0.5"></div></div></div>
+          <div id="c-lshape-fields" style="display:none"><div class="g2"><div class="field"><label>Panjang L1 (m)</label><input type="number" id="c-L1" value="20" min="1" step="0.5"></div><div class="field"><label>Lebar W1 (m)</label><input type="number" id="c-W1" value="10" min="1" step="0.5"></div></div><div class="g2"><div class="field"><label>Panjang L2 (m)</label><input type="number" id="c-L2" value="10" min="1" step="0.5"></div><div class="field"><label>Lebar W2 (m)</label><input type="number" id="c-W2" value="6" min="1" step="0.5"></div></div></div>
+        </div>
+        <div class="card" style="margin-bottom:24px;">
+          <div class="card-header"><div class="card-icon">🌊</div><div><div class="card-title">Kedalaman Air</div><div class="card-sub">Profil lantai kolam</div></div></div>
+          <div class="field"><label>Kedalaman Ujung Dangkal d₁ (m)</label><div class="range-row"><input type="range" id="c-d1" min="0.5" max="3" step="0.1" value="1.2" oninput="document.getElementById('c-d1v').textContent=this.value+'m'"><span class="range-val" id="c-d1v">1.2m</span></div></div>
+          <div class="field"><label>Kedalaman Ujung Dalam d₂ (m)</label><div class="range-row"><input type="range" id="c-d2" min="0.5" max="5" step="0.1" value="2.5" oninput="document.getElementById('c-d2v').textContent=this.value+'m'"><span class="range-val" id="c-d2v">2.5m</span></div></div>
+          <div class="field"><label>Jenis Lantai</label><select id="c-floor"><option value="linear">Miring Linear (f(x) = ax+b)</option><option value="flat">Datar Seragam</option><option value="step">Bertingkat (2 Level)</option></select></div>
+        </div>
+        <div class="card">
+          <button class="btn btn-primary" onclick="runCalculation()">🔢 Hitung dengan Integral Tentu</button>
+        </div>
+      </div>
+      <div>
+        <div class="card" style="margin-bottom:24px;">
+          <div class="card-header"><div class="card-icon">👁️</div><div><div class="card-title">Visualisasi Kolam</div></div></div>
+          <div class="pool-canvas-wrap"><canvas id="poolPreview" width="420" height="200" style="width:100%;height:200px;"></canvas></div>
+          <canvas id="poolSideView" width="420" height="120" style="width:100%;height:120px;border-radius:10px;border:1px solid var(--border);"></canvas>
+        </div>
+        <div class="result-panel" id="calcResult">
+          <div style="font-family:'Syne',sans-serif;font-size:1rem;font-weight:700;color:var(--sky);margin-bottom:16px;">📊 Hasil Perhitungan</div>
+          <div class="g2" style="gap:12px;margin-bottom:16px;">
+            <div class="stat-box"><span class="stat-unit">m²</span><span class="stat-val" id="r-luas">—</span><div class="stat-label">Luas Permukaan</div></div>
+            <div class="stat-box"><span class="stat-unit">m³</span><span class="stat-val" id="r-vol">—</span><div class="stat-label">Volume Air</div></div>
+            <div class="stat-box"><span class="stat-unit">Liter</span><span class="stat-val" id="r-liter">—</span><div class="stat-label">Kapasitas</div></div>
+            <div class="stat-box"><span class="stat-unit">m</span><span class="stat-val" id="r-kel">—</span><div class="stat-label">Keliling</div></div>
+          </div>
+          <div class="g2" style="gap:12px;margin-bottom:16px;">
+            <div class="stat-box"><span class="stat-unit">m²</span><span class="stat-val" id="r-dinding">—</span><div class="stat-label">Luas Dinding</div></div>
+            <div class="stat-box"><span class="stat-unit">kg</span><span class="stat-val" id="r-berat">—</span><div class="stat-label">Beban Air</div></div>
+          </div>
+          <div class="formula" id="r-formula"></div>
+          <div style="margin-top:12px;"><button class="btn btn-secondary" onclick="saveToHistory()" style="width:100%;">💾 Simpan ke Riwayat</button></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- VISUALISASI INTEGRAL -->
+<div class="section" id="sec-integral">
+  <div class="page-header"><div><div class="section-tag">// Visualisasi Integral</div><h1>Grafik Fungsi & Area Integral</h1><p>Eksplorasi makna geometris integral tentu secara interaktif</p></div></div>
+  <div style="padding:40px 48px 80px;">
+    <div class="inner-tabs">
+      <button class="inner-tab active" onclick="switchInnerTab('vis-kurva',this)">Fungsi Kedalaman</button>
+      <button class="inner-tab" onclick="switchInnerTab('vis-jumlah',this)">Jumlah Riemann</button>
+      <button class="inner-tab" onclick="switchInnerTab('vis-cross',this)">Penampang Melintang</button>
+    </div>
+    <div id="vis-kurva" class="vis-panel">
+      <div class="g2" style="align-items:start;">
+        <div class="card">
+          <div class="card-header"><div class="card-icon">⚙️</div><div><div class="card-title">Parameter Grafik</div></div></div>
+          <div class="field"><label>Panjang Kolam L (m)</label><div class="range-row"><input type="range" id="v-L" min="5" max="50" value="25" oninput="document.getElementById('v-Lv').textContent=this.value+'m';drawVis()"><span class="range-val" id="v-Lv">25m</span></div></div>
+          <div class="field"><label>Kedalaman Dangkal d₁ (m)</label><div class="range-row"><input type="range" id="v-d1" min="0.5" max="3" step="0.1" value="1.2" oninput="document.getElementById('v-d1v').textContent=this.value+'m';drawVis()"><span class="range-val" id="v-d1v">1.2m</span></div></div>
+          <div class="field"><label>Kedalaman Dalam d₂ (m)</label><div class="range-row"><input type="range" id="v-d2" min="0.5" max="5" step="0.1" value="2.5" oninput="document.getElementById('v-d2v').textContent=this.value+'m';drawVis()"><span class="range-val" id="v-d2v">2.5m</span></div></div>
+          <div class="field"><label>Lebar Kolam W (m)</label><div class="range-row"><input type="range" id="v-W" min="2" max="25" value="10" oninput="document.getElementById('v-Wv').textContent=this.value+'m';drawVis()"><span class="range-val" id="v-Wv">10m</span></div></div>
+          <div class="formula" id="v-formula" style="font-size:0.78rem;"></div>
+        </div>
+        <div>
+          <div class="card" style="margin-bottom:16px;"><canvas id="visCanvas" width="600" height="320" style="width:100%;height:320px;display:block;"></canvas></div>
+          <div class="g2" style="gap:12px;">
+            <div class="stat-box"><span class="stat-unit">m²</span><span class="stat-val" id="v-int">—</span><div class="stat-label">Nilai Integral ∫f(x)dx</div></div>
+            <div class="stat-box"><span class="stat-unit">m³</span><span class="stat-val" id="v-vol">—</span><div class="stat-label">Volume = W × ∫f(x)dx</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="vis-jumlah" class="vis-panel" style="display:none;">
+      <div class="g2" style="align-items:start;">
+        <div class="card">
+          <div class="card-header"><div class="card-icon">📊</div><div><div class="card-title">Jumlah Riemann</div><div class="card-sub">Aproksimasi integral dengan n persegi</div></div></div>
+          <div class="field"><label>Jumlah Partisi n</label><div class="range-row"><input type="range" id="r-n" min="1" max="50" value="5" oninput="document.getElementById('r-nv').textContent=this.value;drawRiemann()"><span class="range-val" id="r-nv">5</span></div></div>
+          <div class="field"><label>Tipe Jumlah Riemann</label><select id="r-type" onchange="drawRiemann()"><option value="left">Kiri (Left Sum)</option><option value="right">Kanan (Right Sum)</option><option value="mid">Titik Tengah (Midpoint)</option></select></div>
+          <div class="sep"></div><div class="info-hl" id="r-info"></div><div class="formula" id="r-formula" style="font-size:0.76rem;margin-top:12px;"></div>
+        </div>
+        <div class="card"><canvas id="riemannCanvas" width="600" height="360" style="width:100%;height:360px;display:block;"></canvas></div>
+      </div>
+    </div>
+    <div id="vis-cross" class="vis-panel" style="display:none;">
+      <div class="g2" style="align-items:start;">
+        <div class="card">
+          <div class="card-header"><div class="card-icon">🔍</div><div><div class="card-title">Penampang Melintang</div><div class="card-sub">Posisi potongan di sepanjang kolam</div></div></div>
+          <div class="field"><label>Posisi x (m dari ujung dangkal)</label><div class="range-row"><input type="range" id="cross-x" min="0" max="25" value="12" step="0.5" oninput="document.getElementById('cross-xv').textContent=this.value+'m';drawCross()"><span class="range-val" id="cross-xv">12m</span></div></div>
+          <div class="field"><label>Panjang Kolam L (m)</label><input type="number" id="cross-L" value="25" min="5" oninput="drawCross()"></div>
+          <div class="field"><label>Lebar W (m)</label><input type="number" id="cross-W" value="10" min="2" oninput="drawCross()"></div>
+          <div class="field"><label>d₁ (m)</label><input type="number" id="cross-d1" value="1.2" min="0.5" step="0.1" oninput="drawCross()"></div>
+          <div class="field"><label>d₂ (m)</label><input type="number" id="cross-d2" value="2.5" min="0.5" step="0.1" oninput="drawCross()"></div>
+          <div class="formula" id="cross-formula" style="font-size:0.78rem;"></div>
+        </div>
+        <div class="card"><canvas id="crossCanvas" width="600" height="360" style="width:100%;height:360px;display:block;"></canvas></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- KONSEP DASAR -->
+<div class="section" id="sec-konsep">
+  <div class="page-header"><div><div class="section-tag">// Konsep Dasar</div><h1>Teori Integral Tentu</h1><p>Dasar-dasar kalkulus integral dan aplikasinya dalam geometri kolam renang</p></div></div>
+  <div style="padding:40px 48px 80px;">
+    <div class="concept-grid" style="margin-bottom:32px;">
+      <div class="concept-card"><div class="emoji">∑</div><h4>Jumlah Riemann</h4><p>Aproksimasi luas area di bawah kurva menggunakan n persegi tipis. Semakin besar n, semakin akurat hasilnya.</p></div>
+      <div class="concept-card"><div class="emoji">∫</div><h4>Integral Tentu</h4><p>Batas dari jumlah Riemann ketika n→∞. Memberikan nilai eksak luas area di bawah kurva pada interval [a,b].</p></div>
+      <div class="concept-card"><div class="emoji">📐</div><h4>Teorema FTC</h4><p>Teorema Dasar Kalkulus: ∫ₐᵇ f(x)dx = F(b)−F(a), di mana F adalah antiturunan dari f.</p></div>
+      <div class="concept-card"><div class="emoji">📦</div><h4>Volume Benda Putar</h4><p>Volume benda yang dibentuk dari rotasi kurva dihitung dengan integral: V = π∫ₐᵇ [f(x)]² dx.</p></div>
+      <div class="concept-card"><div class="emoji">🏊</div><h4>Volume Prisma Integral</h4><p>Volume kolam = W × ∫₀ᴸ f(x)dx, di mana f(x) adalah fungsi kedalaman pada posisi x.</p></div>
+      <div class="concept-card"><div class="emoji">🔗</div><h4>Linearisasi Fungsi</h4><p>Lantai miring kolam dimodelkan sebagai f(x) = d₁ + [(d₂−d₁)/L]·x, fungsi linear kontinu.</p></div>
+    </div>
+    <div class="theory-block"><h3>1️⃣ Definisi Integral Tentu (Integral Riemann)</h3><p>Misalkan f adalah fungsi yang terdefinisi pada interval [a, b]. <strong style="color:var(--sky)">Integral tentu</strong> dari f pada [a, b] didefinisikan sebagai:</p><div class="formula"><span class="hl">∫ₐᵇ f(x) dx = lim<sub>n→∞</sub> Σᵢ₌₁ⁿ f(xᵢ*) · Δx</span><br><br>dimana:<br><span class="vr">Δx</span> = (b − a) / n  &nbsp;&nbsp;→&nbsp;&nbsp; lebar setiap partisi<br><span class="vr">xᵢ*</span> = titik sampel pada subinterval ke-i<br><span class="vr">n</span>  = jumlah partisi (subinterval)</div><p>Secara geometris, integral tentu menyatakan <strong style="color:var(--gold)">luas area yang dibatasi kurva f(x), sumbu-x, dan garis x=a serta x=b</strong>.</p></div>
+    <div class="theory-block"><h3>2️⃣ Teorema Dasar Kalkulus (Fundamental Theorem of Calculus)</h3><p>Jika f kontinu pada [a, b] dan F adalah antiturunan f (artinya F'(x) = f(x)), maka:</p><div class="formula"><span class="hl">∫ₐᵇ f(x) dx = F(b) − F(a)</span><br><br>Contoh untuk f(x) = <span class="vr">mx + c</span> (fungsi linear):<br>F(x) = <span class="gr">½mx² + cx</span><br><br>∫₀ᴸ (mx + c) dx = [½mL² + cL] − [0] = <span class="hl">½mL² + cL</span></div></div>
+    <div class="theory-block"><h3>3️⃣ Pemodelan Kolam Renang dengan Integral</h3><p>Lantai kolam renang standar berbentuk miring dari ujung dangkal ke ujung dalam. Ini dapat dimodelkan sebagai fungsi linear:</p><div class="formula">Misalkan:<br><span class="vr">d₁</span> = kedalaman ujung dangkal (x = 0)<br><span class="vr">d₂</span> = kedalaman ujung dalam (x = L)<br><span class="vr">L</span>  = panjang kolam<br><br>Fungsi kedalaman: <span class="hl">f(x) = d₁ + [(d₂ − d₁)/L] · x</span><br><br>Integral: ∫₀ᴸ f(x) dx = [d₁x + (d₂-d₁)/(2L) · x²]₀ᴸ<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; = <span class="hl">L · (d₁ + d₂) / 2</span><br><br><span class="gr">Volume = W × L × (d₁ + d₂) / 2</span></div><div class="info-mint" style="margin-top:12px;"><strong>Interpretasi:</strong> Hasil integral L·(d₁+d₂)/2 secara geometris adalah luas trapesium yang terbentuk dari penampang vertikal kolam — sama dengan rumus luas trapesium biasa! Ini membuktikan konsistensi antara kalkulus dan geometri dasar.</div></div>
+    <div class="theory-block"><h3>4️⃣ Sifat-sifat Integral Tentu</h3><div class="g2"><div><div class="formula" style="margin-bottom:12px;"><span class="vr">Linearitas:</span><br>∫ₐᵇ [αf(x) + βg(x)] dx<br>= α∫ₐᵇf(x)dx + β∫ₐᵇg(x)dx</div><div class="formula" style="margin-bottom:12px;"><span class="vr">Keterbalikan Batas:</span><br>∫ₐᵇ f(x) dx = −∫ᵦₐ f(x) dx</div></div><div><div class="formula" style="margin-bottom:12px;"><span class="vr">Aditif Interval:</span><br>∫ₐᵇ f(x) dx + ∫ᵦ꜀ f(x) dx<br>= ∫ₐ꜀ f(x) dx</div><div class="formula" style="margin-bottom:12px;"><span class="vr">Nilai Nol:</span><br>∫ₐᵃ f(x) dx = 0</div></div></div></div>
+    <div class="theory-block"><h3>5️⃣ Aplikasi di Dunia Nyata</h3><div class="g3"><div class="info-hl"><strong>🏗️ Konstruksi</strong><br>Volume beton, kapasitas fondasi, dan beban struktur dihitung menggunakan integral dari profil penampang melintang.</div><div class="info-mint"><strong>💧 Hidrologi</strong><br>Debit aliran sungai dihitung sebagai integral dari profil kecepatan aliran terhadap luas penampang.</div><div class="info-hl" style="border-color:rgba(239,71,111,0.3);background:rgba(239,71,111,0.07);"><strong style="color:var(--coral)">⚡ Fisika</strong><br>Usaha (work) dihitung sebagai integral gaya terhadap perpindahan: W = ∫F(x)dx.</div></div></div>
+  </div>
+</div>
+
+<!-- KUMPULAN RUMUS -->
+<div class="section" id="sec-rumus">
+  <div class="page-header"><div><div class="section-tag">// Referensi</div><h1>Kumpulan Rumus Integral</h1><p>Kompilasi formula yang digunakan dalam perhitungan kolam renang dan kalkulus integral</p></div></div>
+  <div style="padding:40px 48px 80px;">
+    <div class="g2" style="margin-bottom:24px;">
+      <div class="card"><div class="card-header"><div class="card-icon">📐</div><div><div class="card-title">Luas Bangun Datar</div></div></div><table class="data-table"><tr><th>Bentuk</th><th>Rumus</th></tr><tr><td>Persegi Panjang</td><td><code style="color:var(--gold)">A = p × l</code></td></tr><tr><td>Lingkaran</td><td><code style="color:var(--gold)">A = πr²</code></td></tr><tr><td>Elips</td><td><code style="color:var(--gold)">A = π × a × b</code></td></tr><tr><td>Trapesium</td><td><code style="color:var(--gold)">A = ½(a+b) × t</code></td></tr><tr><td>Segitiga</td><td><code style="color:var(--gold)">A = ½ × a × t</code></td></tr></table></div>
+      <div class="card"><div class="card-header"><div class="card-icon">📦</div><div><div class="card-title">Volume Benda Ruang</div></div></div><table class="data-table"><tr><th>Bentuk</th><th>Rumus</th></tr><tr><td>Prisma tegak</td><td><code style="color:var(--gold)">V = A<sub>alas</sub> × t</code></td></tr><tr><td>Kolam miring</td><td><code style="color:var(--gold)">V = W·L·(d₁+d₂)/2</code></td></tr><tr><td>Silinder</td><td><code style="color:var(--gold)">V = πr²t</code></td></tr><tr><td>Bola</td><td><code style="color:var(--gold)">V = (4/3)πr³</code></td></tr><tr><td>Kerucut</td><td><code style="color:var(--gold)">V = (1/3)πr²t</code></td></tr></table></div>
+    </div>
+    <div class="g2" style="margin-bottom:24px;">
+      <div class="card"><div class="card-header"><div class="card-icon">∫</div><div><div class="card-title">Integral Dasar</div></div></div><table class="data-table"><tr><th>Fungsi f(x)</th><th>∫f(x)dx</th></tr><tr><td>k (konstan)</td><td><code style="color:var(--mint)">kx + C</code></td></tr><tr><td>xⁿ (n≠−1)</td><td><code style="color:var(--mint)">xⁿ⁺¹/(n+1) + C</code></td></tr><tr><td>eˣ</td><td><code style="color:var(--mint)">eˣ + C</code></td></tr><tr><td>sin(x)</td><td><code style="color:var(--mint)">−cos(x) + C</code></td></tr><tr><td>cos(x)</td><td><code style="color:var(--mint)">sin(x) + C</code></td></tr><tr><td>1/x</td><td><code style="color:var(--mint)">ln|x| + C</code></td></tr></table></div>
+      <div class="card"><div class="card-header"><div class="card-icon">🌊</div><div><div class="card-title">Rumus Kolam Renang</div></div></div><div class="formula" style="font-size:0.78rem;line-height:2.2;"><span class="vr">Fungsi kedalaman:</span><br>f(x) = d₁ + [(d₂−d₁)/L] · x<br><br><span class="vr">Integral kedalaman:</span><br>∫₀ᴸ f(x)dx = L(d₁+d₂)/2<br><br><span class="vr">Volume air (lantai miring):</span><br><span class="hl">V = W · L · (d₁+d₂) / 2</span><br><br><span class="vr">Luas dinding samping:</span><br>A_dinding = 2 · L · (d₁+d₂)/2 + 2 · W · (d₁+d₂)/2<br><br><span class="vr">Beban air (kg):</span><br>m = V × ρ_air = V × 1000</div></div>
+    </div>
+    <div class="card"><div class="card-header"><div class="card-icon">🔢</div><div><div class="card-title">Metode Numerik Integral</div></div></div><div class="g3"><div><div class="formula" style="font-size:0.76rem;"><span class="vr">Aturan Kiri:</span><br>∫≈ Δx · Σᵢ₌₀ⁿ⁻¹ f(xᵢ)</div><p style="font-size:0.78rem;color:rgba(255,255,255,0.5);margin-top:8px;line-height:1.6;">Menggunakan nilai f di ujung kiri setiap partisi.</p></div><div><div class="formula" style="font-size:0.76rem;"><span class="vr">Aturan Trapesium:</span><br>∫≈ (Δx/2)·[f(a)+2Σf(xᵢ)+f(b)]</div><p style="font-size:0.78rem;color:rgba(255,255,255,0.5);margin-top:8px;line-height:1.6;">Lebih akurat, menggunakan trapesium.</p></div><div><div class="formula" style="font-size:0.76rem;"><span class="vr">Aturan Simpson 1/3:</span><br>∫≈ (Δx/3)·[f(a)+4Σf(x<sub>ganjil</sub>)+2Σf(x<sub>genap</sub>)+f(b)]</div><p style="font-size:0.78rem;color:rgba(255,255,255,0.5);margin-top:8px;line-height:1.6;">Paling akurat, menggunakan parabola.</p></div></div></div>
+  </div>
+</div>
+
+<!-- KONVERSI SATUAN -->
+<div class="section" id="sec-konversi">
+  <div class="page-header"><div><div class="section-tag">// Alat Bantu</div><h1>Konversi Satuan</h1><p>Konversi satuan volume, panjang, dan berat yang digunakan dalam perhitungan kolam</p></div></div>
+  <div style="padding:40px 48px 80px;">
+    <div class="g3">
+      <div class="card"><div class="card-header"><div class="card-icon">📦</div><div><div class="card-title">Konversi Volume</div></div></div><div class="field"><label>Meter Kubik (m³)</label><input type="number" id="cv-m3" value="1" oninput="convVolume('m3')"></div><div class="field"><label>Liter (L)</label><input type="number" id="cv-l" oninput="convVolume('l')"></div><div class="field"><label>Galon (US)</label><input type="number" id="cv-gal" oninput="convVolume('gal')"></div><div class="field"><label>Feet Kubik (ft³)</label><input type="number" id="cv-ft3" oninput="convVolume('ft3')"></div><div class="info-hl" style="margin-top:8px;font-size:0.75rem;"><strong>1 m³</strong> = 1.000 L = 264,17 galon = 35,31 ft³</div></div>
+      <div class="card"><div class="card-header"><div class="card-icon">📏</div><div><div class="card-title">Konversi Panjang</div></div></div><div class="field"><label>Meter (m)</label><input type="number" id="cl-m" value="1" oninput="convLength('m')"></div><div class="field"><label>Centimeter (cm)</label><input type="number" id="cl-cm" oninput="convLength('cm')"></div><div class="field"><label>Feet (ft)</label><input type="number" id="cl-ft" oninput="convLength('ft')"></div><div class="field"><label>Inch (in)</label><input type="number" id="cl-in" oninput="convLength('in')"></div><div class="info-hl" style="margin-top:8px;font-size:0.75rem;"><strong>1 m</strong> = 100 cm = 3,2808 ft = 39,37 in</div></div>
+      <div class="card"><div class="card-header"><div class="card-icon">⚖️</div><div><div class="card-title">Konversi Berat/Massa</div></div></div><div class="field"><label>Kilogram (kg)</label><input type="number" id="cw-kg" value="1000" oninput="convWeight('kg')"></div><div class="field"><label>Gram (g)</label><input type="number" id="cw-g" oninput="convWeight('g')"></div><div class="field"><label>Ton (t)</label><input type="number" id="cw-ton" oninput="convWeight('ton')"></div><div class="field"><label>Pound (lb)</label><input type="number" id="cw-lb" oninput="convWeight('lb')"></div><div class="info-hl" style="margin-top:8px;font-size:0.75rem;"><strong>Air:</strong> 1 m³ = 1.000 kg = 1 ton pada 4°C</div></div>
+    </div>
+    <div class="card" style="margin-top:24px;"><div class="card-header"><div class="card-icon">🏊</div><div><div class="card-title">Referensi Ukuran Kolam Renang Standar</div></div></div><table class="data-table"><tr><th>Jenis Kolam</th><th>Panjang</th><th>Lebar</th><th>Kedalaman</th><th>Volume ±</th></tr><tr><td>Olimpiade (50m)</td><td>50 m</td><td>25 m</td><td>2,0 m</td><td>2.500 m³</td></tr><tr><td>Kolam Loncat Indah</td><td>25 m</td><td>21 m</td><td>5,0 m</td><td>2.625 m³</td></tr><tr><td>Kolam Renang Umum</td><td>25 m</td><td>10 m</td><td>1,2–2,5 m</td><td>212 m³</td></tr></table></div>
+  </div>
+</div>
+
+<!-- PERBANDINGAN -->
+<div class="section" id="sec-perbandingan">
+  <div class="page-header"><div><div class="section-tag">// Analisis Komparatif</div><h1>Perbandingan Kolam</h1><p>Bandingkan dua konfigurasi kolam renang dan lihat perbedaannya</p></div></div>
+  <div style="padding:40px 48px 80px;">
+    <div class="g2" style="margin-bottom:24px;">
+      <div class="card"><div class="card-header"><div class="card-icon" style="background:linear-gradient(135deg,var(--sky),var(--ocean));">A</div><div><div class="card-title">Kolam A</div></div></div><div class="field"><label>Panjang (m)</label><input type="number" id="cmp-aL" value="25" min="1"></div><div class="field"><label>Lebar (m)</label><input type="number" id="cmp-aW" value="10" min="1"></div><div class="field"><label>Kedalaman Dangkal (m)</label><input type="number" id="cmp-ad1" value="1.2" step="0.1"></div><div class="field"><label>Kedalaman Dalam (m)</label><input type="number" id="cmp-ad2" value="2.5" step="0.1"></div></div>
+      <div class="card"><div class="card-header"><div class="card-icon" style="background:linear-gradient(135deg,var(--coral),#c5234a);">B</div><div><div class="card-title">Kolam B</div></div></div><div class="field"><label>Panjang (m)</label><input type="number" id="cmp-bL" value="20" min="1"></div><div class="field"><label>Lebar (m)</label><input type="number" id="cmp-bW" value="12" min="1"></div><div class="field"><label>Kedalaman Dangkal (m)</label><input type="number" id="cmp-bd1" value="1.0" step="0.1"></div><div class="field"><label>Kedalaman Dalam (m)</label><input type="number" id="cmp-bd2" value="3.0" step="0.1"></div></div>
+    </div>
+    <button class="btn btn-primary" onclick="runComparison()" style="max-width:320px;margin:0 auto 28px;display:block;">⚖️ Bandingkan Sekarang</button>
+    <div id="cmp-result" style="display:none;">
+      <div class="g2" style="margin-bottom:20px;">
+        <canvas id="cmpBarCanvas" width="500" height="280" style="width:100%;height:280px;display:block;border-radius:14px;border:1px solid var(--border);"></canvas>
+        <div class="card" id="cmp-table"></div>
+      </div>
+      <div class="card" id="cmp-verdict"></div>
+    </div>
+  </div>
+</div>
+
+<!-- RIWAYAT -->
+<div class="section" id="sec-riwayat">
+  <div class="page-header"><div><div class="section-tag">// Riwayat</div><h1>Riwayat Perhitungan</h1><p>Simpan dan tinjau kembali hasil perhitungan sebelumnya</p></div></div>
+  <div style="padding:40px 48px 80px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+      <div style="font-size:0.85rem;color:rgba(255,255,255,0.45);" id="hist-count">0 catatan tersimpan</div>
+      <button class="btn btn-secondary" onclick="clearHistory()" style="width:auto;padding:8px 18px;font-size:0.8rem;">🗑️ Hapus Semua</button>
+    </div>
+    <div id="hist-list">
+      <div style="text-align:center;padding:60px;color:rgba(255,255,255,0.2);"><div style="font-size:3rem;margin-bottom:12px;">📭</div><div>Belum ada riwayat tersimpan.<br>Gunakan Kalkulator dan klik "Simpan ke Riwayat".</div></div>
+    </div>
+  </div>
+</div>
+
+</div><!-- end main -->
+
+<!-- ===== JAVASCRIPT ===== -->
+<script>
+// ===== POLYFILL =====
+if(!CanvasRenderingContext2D.prototype.roundRect){CanvasRenderingContext2D.prototype.roundRect=function(x,y,w,h,r){if(w<2*r)r=w/2;if(h<2*r)r=h/2;this.moveTo(x+r,y);this.arcTo(x+w,y,x+w,y+h,r);this.arcTo(x+w,y+h,x,y+h,r);this.arcTo(x,y+h,x,y,r);this.arcTo(x,y,x+w,y,r);this.closePath();return this;};}
+
+// ===== GLOBAL STATE =====
+let calcHistory=[];
+
+// ===== BUBBLES =====
+(function(){const c=document.getElementById('bubblesContainer');if(!c)return;for(let i=0;i<18;i++){const b=document.createElement('div');b.className='bubble';const s=Math.random()*30+10;b.style.cssText=`width:${s}px;height:${s}px;left:${Math.random()*100}%;bottom:${Math.random()*-20}%;animation-duration:${Math.random()*12+8}s;animation-delay:${Math.random()*8}s;`;c.appendChild(b);}})();
+
+// ===== NAVIGATION =====
+function showSection(id,navEl){document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));document.getElementById('sec-'+id)?.classList.add('active');document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));if(navEl)navEl.classList.add('active');if(id==='integral'){drawVis();drawRiemann();drawCross();}if(id==='kalkulator')drawPoolPreview();if(id==='riwayat')renderHistory();}
+function switchInnerTab(id,btn){document.querySelectorAll('.vis-panel').forEach(p=>p.style.display='none');document.getElementById(id).style.display='block';document.querySelectorAll('.inner-tab').forEach(b=>b.classList.remove('active'));btn.classList.add('active');if(id==='vis-jumlah')drawRiemann();if(id==='vis-cross')drawCross();if(id==='vis-kurva')drawVis();}
+function toggleShapeFields(){const v=document.getElementById('c-shape').value;document.getElementById('c-rect-fields').style.display=(v==='rect'||v==='lshape')?'block':'none';document.getElementById('c-oval-fields').style.display=(v==='oval')?'block':'none';document.getElementById('c-lshape-fields').style.display=(v==='lshape')?'block':'none';drawPoolPreview();}
+
+// ===== POOL PREVIEW =====
+function drawPoolPreview(){const canvas=document.getElementById('poolPreview');if(!canvas)return;const ctx=canvas.getContext('2d');const W=canvas.width,H=canvas.height;const d1=parseFloat(document.getElementById('c-d1')?.value||1.2),d2=parseFloat(document.getElementById('c-d2')?.value||2.5);ctx.clearRect(0,0,W,H);const bg=ctx.createLinearGradient(0,0,0,H);bg.addColorStop(0,'#061a28');bg.addColorStop(1,'#03111c');ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);const p=20,pw=W-p*2,ph=H-p*2;ctx.save();ctx.translate(p,p);ctx.beginPath();ctx.roundRect(0,0,pw,ph,10);ctx.clip();const wg=ctx.createLinearGradient(0,0,pw,0);wg.addColorStop(0,'rgba(0,180,216,0.65)');wg.addColorStop(1,'rgba(0,60,100,0.85)');ctx.fillStyle=wg;ctx.fillRect(0,0,pw,ph);const maxD=Math.max(d1,d2)||1;for(let i=0;i<3;i++){ctx.strokeStyle=`rgba(255,255,255,${0.07+i*0.02})`;ctx.lineWidth=1.5;ctx.beginPath();for(let x=0;x<=pw;x+=3){const y=(ph/4)*(i+1)+Math.sin(x/pw*Math.PI*3+i*1.2)*4;x===0?ctx.moveTo(x,y):ctx.lineTo(x,y);}ctx.stroke();}const fy1=ph-(d1/maxD)*(ph*0.75),fy2=ph-(d2/maxD)*(ph*0.75);ctx.strokeStyle='rgba(255,209,102,0.85)';ctx.lineWidth=2;ctx.setLineDash([5,4]);ctx.beginPath();ctx.moveTo(0,fy1);ctx.lineTo(pw,fy2);ctx.stroke();ctx.setLineDash([]);ctx.restore();ctx.font='bold 11px "JetBrains Mono",monospace';ctx.fillStyle='rgba(255,209,102,0.85)';ctx.textAlign='left';ctx.fillText(`d₁=${d1}m`,p+6,p+fy1-4);ctx.textAlign='right';ctx.fillText(`d₂=${d2}m`,W-p-6,p+fy2-4);drawSideView(d1,d2);}
+function drawSideView(d1,d2){const canvas=document.getElementById('poolSideView');if(!canvas)return;const ctx=canvas.getContext('2d');const W=canvas.width,H=canvas.height;ctx.clearRect(0,0,W,H);const bg=ctx.createLinearGradient(0,0,0,H);bg.addColorStop(0,'#061a28');bg.addColorStop(1,'#03111c');ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);const pad={l:50,r:20,t:16,b:28},cw=W-pad.l-pad.r,ch=H-pad.t-pad.b,maxD=Math.max(d1,d2)*1.2||1;const y1=pad.t+(d1/maxD)*ch,y2=pad.t+(d2/maxD)*ch;ctx.beginPath();ctx.moveTo(pad.l,pad.t);ctx.lineTo(pad.l+cw,pad.t);ctx.lineTo(pad.l+cw,y2);ctx.lineTo(pad.l,y1);ctx.closePath();const wg=ctx.createLinearGradient(pad.l,0,pad.l+cw,0);wg.addColorStop(0,'rgba(0,180,216,0.5)');wg.addColorStop(1,'rgba(0,60,100,0.7)');ctx.fillStyle=wg;ctx.fill();ctx.strokeStyle='rgba(255,209,102,0.8)';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(pad.l,y1);ctx.lineTo(pad.l+cw,y2);ctx.stroke();ctx.strokeStyle='rgba(144,224,239,0.4)';ctx.lineWidth=1.5;ctx.strokeRect(pad.l,pad.t,cw,ch);ctx.fillStyle='rgba(255,255,255,0.4)';ctx.font='10px "JetBrains Mono",monospace';ctx.textAlign='right';ctx.fillText(`d₁=${d1}m`,pad.l-4,y1+4);ctx.fillText(`d₂=${d2}m`,pad.l-4,y2+4);ctx.textAlign='center';ctx.fillStyle='rgba(255,255,255,0.25)';ctx.fillText('Tampak Samping',W/2,H-6);}
+
+// ===== CALCULATION =====
+function runCalculation(){const shape=document.getElementById('c-shape').value,d1=parseFloat(document.getElementById('c-d1').value)||1.2,d2=parseFloat(document.getElementById('c-d2').value)||2.5,floor=document.getElementById('c-floor').value;let L,W,area,perimeter;if(shape==='oval'){const a=parseFloat(document.getElementById('c-a').value)||12,b=parseFloat(document.getElementById('c-b').value)||5;L=2*a;W=2*b;area=Math.PI*a*b;const h=Math.pow(a-b,2)/Math.pow(a+b,2);perimeter=Math.PI*(a+b)*(1+(3*h)/(10+Math.sqrt(4-3*h)));}else if(shape==='lshape'){const L1=parseFloat(document.getElementById('c-L1').value)||20,W1=parseFloat(document.getElementById('c-W1').value)||10,L2=parseFloat(document.getElementById('c-L2').value)||10,W2=parseFloat(document.getElementById('c-W2').value)||6;L=L1;W=W1;area=L1*W1+L2*W2;perimeter=2*(L1+W1)+2*(L2+W2)-2*Math.min(L2,W2);}else{L=parseFloat(document.getElementById('c-L').value)||25;W=parseFloat(document.getElementById('c-W').value)||10;area=L*W;perimeter=2*(L+W);}let integral,volume;if(floor==='flat'){const d=(d1+d2)/2;integral=L*d;volume=W*integral;}else if(floor==='step'){const L1=L/2;integral=L1*d1+L1*d2;volume=W*integral;}else{integral=L*(d1+d2)/2;volume=W*integral;}const liter=volume*1000,dinding=perimeter*((d1+d2)/2),berat=volume*1000;document.getElementById('r-luas').textContent=area.toFixed(2);document.getElementById('r-vol').textContent=volume.toFixed(2);document.getElementById('r-liter').textContent=Math.round(liter).toLocaleString('id-ID');document.getElementById('r-kel').textContent=perimeter.toFixed(2);document.getElementById('r-dinding').textContent=dinding.toFixed(2);document.getElementById('r-berat').textContent=Math.round(berat).toLocaleString('id-ID');const mVal=((d2-d1)/L).toFixed(4);document.getElementById('r-formula').innerHTML=`<span class="vr">Fungsi kedalaman:</span> f(x) = ${d1} + ${mVal}·x<br><span class="vr">Integral:</span> ∫₀^${L} f(x)dx = L·(d₁+d₂)/2 = ${L}·(${d1}+${d2})/2 = <span class="hl">${integral.toFixed(3)} m²</span><br><span class="vr">Volume:</span> V = W × ∫ = ${W} × ${integral.toFixed(3)} = <span class="hl">${volume.toFixed(3)} m³</span><br><span class="gr">Kapasitas: ${Math.round(liter).toLocaleString('id-ID')} Liter</span>`;document.getElementById('calcResult').classList.add('show');drawPoolPreview();window._lastCalc={shape,L,W,d1,d2,area,volume,liter,perimeter,floor,ts:new Date().toISOString()};}
+
+// ===== HISTORY =====
+function saveToHistory(){const c=window._lastCalc;if(!c){alert('⚠️ Hitung terlebih dahulu!');return;}calcHistory.unshift(c);try{localStorage.setItem('aquaCalcHistory',JSON.stringify(calcHistory));}catch(e){}const btn=event?.target;if(btn){const orig=btn.innerHTML;btn.innerHTML='✅ Tersimpan!';setTimeout(()=>btn.innerHTML=orig,1500);}renderHistory();}
+function loadHistory(){try{const s=localStorage.getItem('aquaCalcHistory');if(s)calcHistory=JSON.parse(s);}catch(e){calcHistory=[];}}
+function renderHistory(){const container=document.getElementById('hist-list'),countEl=document.getElementById('hist-count');if(!container)return;countEl.textContent=`${calcHistory.length} catatan tersimpan`;if(calcHistory.length===0){container.innerHTML=`<div style="text-align:center;padding:60px;color:rgba(255,255,255,0.2);"><div style="font-size:3rem;margin-bottom:12px;">📭</div><div>Belum ada riwayat tersimpan.<br>Gunakan Kalkulator dan klik "Simpan ke Riwayat".</div></div>`;return;}container.innerHTML=calcHistory.map(item=>{const date=new Date(item.ts),timeStr=date.toLocaleDateString('id-ID',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}),shapeLabel={'rect':'📐 Persegi','oval':'⭕ Oval','lshape':'🔷 Bentuk L'}[item.shape]||'📐';return`<div class="log-item"><div><div class="log-name">${shapeLabel} · ${item.L}×${item.W}m</div><div style="font-size:0.72rem;color:rgba(255,255,255,0.3);">d₁=${item.d1}m • d₂=${item.d2}m</div></div><div style="text-align:right;"><div class="log-val">${item.volume?.toFixed(2)||'—'} m³</div><div class="log-time">${timeStr}</div></div></div>`;}).join('');}
+function clearHistory(){if(confirm('🗑️ Hapus semua riwayat?')){calcHistory=[];try{localStorage.removeItem('aquaCalcHistory');}catch(e){}renderHistory();}}
+
+// ===== VISUALIZATION =====
+function drawVis(){const canvas=document.getElementById('visCanvas');if(!canvas)return;const ctx=canvas.getContext('2d');const L=parseFloat(document.getElementById('v-L')?.value||25),d1=parseFloat(document.getElementById('v-d1')?.value||1.2),d2=parseFloat(document.getElementById('v-d2')?.value||2.5),W=parseFloat(document.getElementById('v-W')?.value||10);const Wc=canvas.width,Hc=canvas.height,pad={l:60,r:30,t:20,b:50},plotW=Wc-pad.l-pad.r,plotH=Hc-pad.t-pad.b;ctx.clearRect(0,0,Wc,Hc);ctx.fillStyle='#061a28';ctx.fillRect(0,0,Wc,Hc);ctx.strokeStyle='rgba(255,255,255,0.3)';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(pad.l,pad.t);ctx.lineTo(pad.l,Hc-pad.b);ctx.lineTo(Wc-pad.r,Hc-pad.b);ctx.stroke();const maxD=Math.max(d1,d2,1),scaleX=plotW/L,scaleY=plotH/maxD;ctx.strokeStyle='rgba(0,180,216,0.9)';ctx.lineWidth=3;ctx.beginPath();for(let x=0;x<=L;x+=0.5){const depth=d1+((d2-d1)/L)*x,px=pad.l+x*scaleX,py=Hc-pad.b-depth*scaleY;if(x===0)ctx.moveTo(px,py);else ctx.lineTo(px,py);}ctx.stroke();ctx.fillStyle='rgba(0,180,216,0.15)';ctx.beginPath();ctx.moveTo(pad.l,Hc-pad.b);for(let x=0;x<=L;x+=0.5){const depth=d1+((d2-d1)/L)*x;ctx.lineTo(pad.l+x*scaleX,Hc-pad.b-depth*scaleY);}ctx.lineTo(Wc-pad.r,Hc-pad.b);ctx.closePath();ctx.fill();const integral=L*(d1+d2)/2;document.getElementById('v-int').textContent=integral.toFixed(2);document.getElementById('v-vol').textContent=(W*integral).toFixed(2);document.getElementById('v-formula').innerHTML=`f(x) = ${d1} + ${((d2-d1)/L).toFixed(4)}·x &nbsp;|&nbsp; ∫ = ${integral.toFixed(2)} m²`;}
+function drawRiemann(){const canvas=document.getElementById('riemannCanvas');if(!canvas)return;const ctx=canvas.getContext('2d');const L=25,d1=1.2,d2=2.5,n=parseInt(document.getElementById('r-n')?.value||5),type=document.getElementById('r-type')?.value||'left';const Wc=canvas.width,Hc=canvas.height,pad={l:60,r:30,t:20,b:50},plotW=Wc-pad.l-pad.r,plotH=Hc-pad.t-pad.b;ctx.clearRect(0,0,Wc,Hc);ctx.fillStyle='#061a28';ctx.fillRect(0,0,Wc,Hc);ctx.strokeStyle='rgba(255,255,255,0.3)';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(pad.l,pad.t);ctx.lineTo(pad.l,Hc-pad.b);ctx.lineTo(Wc-pad.r,Hc-pad.b);ctx.stroke();const maxD=Math.max(d1,d2,1),scaleX=plotW/L,scaleY=plotH/maxD;ctx.strokeStyle='rgba(0,180,216,0.9)';ctx.lineWidth=2;ctx.beginPath();for(let x=0;x<=L;x+=0.2){const depth=d1+((d2-d1)/L)*x,px=pad.l+x*scaleX,py=Hc-pad.b-depth*scaleY;if(x===0)ctx.moveTo(px,py);else ctx.lineTo(px,py);}ctx.stroke();const dx=L/n;let sum=0;for(let i=0;i<n;i++){let sampleX=type==='left'?i*dx:type==='right'?(i+1)*dx:(i+0.5)*dx;const height=d1+((d2-d1)/L)*sampleX,x=pad.l+i*dx*scaleX,y=Hc-pad.b-height*scaleY,w=dx*scaleX,h=height*scaleY;ctx.fillStyle=i%2===0?'rgba(6,214,160,0.25)':'rgba(0,180,216,0.2)';ctx.fillRect(x,y,w,h);ctx.strokeStyle='rgba(6,214,160,0.5)';ctx.lineWidth=1;ctx.strokeRect(x,y,w,h);sum+=height*dx;}const exact=L*(d1+d2)/2;document.getElementById('r-info').innerHTML=`<strong>Aproksimasi:</strong> ${sum.toFixed(3)} m² &nbsp;|&nbsp; <strong>Eksak:</strong> ${exact.toFixed(3)} m² &nbsp;|&nbsp; <strong>Error:</strong> ${Math.abs(sum-exact).toFixed(4)} m²`;document.getElementById('r-formula').innerHTML=`R<sub>${type}</sub> = Δx·Σ = ${dx.toFixed(2)}·Σ = <span class="hl">${sum.toFixed(3)}</span>`;}
+function drawCross(){const canvas=document.getElementById('crossCanvas');if(!canvas)return;const ctx=canvas.getContext('2d');const x=parseFloat(document.getElementById('cross-x')?.value||12),L=parseFloat(document.getElementById('cross-L')?.value||25),W=parseFloat(document.getElementById('cross-W')?.value||10),d1=parseFloat(document.getElementById('cross-d1')?.value||1.2),d2=parseFloat(document.getElementById('cross-d2')?.value||2.5);const Wc=canvas.width,Hc=canvas.height;ctx.clearRect(0,0,Wc,Hc);ctx.fillStyle='#061a28';ctx.fillRect(0,0,Wc,Hc);const pad=40,poolW=Wc-2*pad,poolH=Hc-2*pad;ctx.strokeStyle='rgba(0,180,216,0.5)';ctx.lineWidth=3;ctx.strokeRect(pad,pad,poolW,poolH);ctx.fillStyle='rgba(0,180,216,0.15)';ctx.fillRect(pad+3,pad+3,poolW-6,poolH-6);const xPos=pad+(x/L)*poolW;ctx.strokeStyle='rgba(239,71,111,0.9)';ctx.lineWidth=3;ctx.setLineDash([8,4]);ctx.beginPath();ctx.moveTo(xPos,pad);ctx.lineTo(xPos,pad+poolH);ctx.stroke();ctx.setLineDash([]);const depthAtX=d1+((d2-d1)/L)*x,maxD=Math.max(d1,d2,1),depthScale=poolH/maxD,depthPx=depthAtX*depthScale;ctx.strokeStyle='rgba(255,209,102,0.9)';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(xPos+10,pad+poolH);ctx.lineTo(xPos+10,pad+poolH-depthPx);ctx.stroke();ctx.fillStyle='rgba(255,255,255,0.8)';ctx.font='bold 12px "JetBrains Mono",monospace';ctx.textAlign='left';ctx.fillText(`f(${x}) = ${depthAtX.toFixed(2)} m`,xPos+20,pad+poolH-depthPx/2);document.getElementById('cross-formula').innerHTML=`f(x) = ${d1} + <span class="hl">${((d2-d1)/L).toFixed(4)}</span>·${x} = <span class="gold">${depthAtX.toFixed(3)} m</span>`;}
+
+// ===== CONVERTERS =====
+function convVolume(src){const m3=src==='m3'?parseFloat(document.getElementById('cv-m3').value)||0:src==='l'?(parseFloat(document.getElementById('cv-l').value)||0)/1000:src==='gal'?(parseFloat(document.getElementById('cv-gal').value)||0)/264.172:(parseFloat(document.getElementById('cv-ft3').value)||0)/35.3147;document.getElementById('cv-m3').value=m3.toFixed(4);document.getElementById('cv-l').value=(m3*1000).toFixed(2);document.getElementById('cv-gal').value=(m3*264.172).toFixed(2);document.getElementById('cv-ft3').value=(m3*35.3147).toFixed(4);}
+function convLength(src){const m=src==='m'?parseFloat(document.getElementById('cl-m').value)||0:src==='cm'?(parseFloat(document.getElementById('cl-cm').value)||0)/100:src==='ft'?(parseFloat(document.getElementById('cl-ft').value)||0)/3.28084:(parseFloat(document.getElementById('cl-in').value)||0)/39.3701;document.getElementById('cl-m').value=m.toFixed(4);document.getElementById('cl-cm').value=(m*100).toFixed(2);document.getElementById('cl-ft').value=(m*3.28084).toFixed(4);document.getElementById('cl-in').value=(m*39.3701).toFixed(4);}
+function convWeight(src){const kg=src==='kg'?parseFloat(document.getElementById('cw-kg').value)||0:src==='g'?(parseFloat(document.getElementById('cw-g').value)||0)/1000:src==='ton'?(parseFloat(document.getElementById('cw-ton').value)||0)/0.001:(parseFloat(document.getElementById('cw-lb').value)||0)/2.20462;document.getElementById('cw-kg').value=kg.toFixed(2);document.getElementById('cw-g').value=(kg*1000).toFixed(0);document.getElementById('cw-ton').value=(kg*0.001).toFixed(4);document.getElementById('cw-lb').value=(kg*2.20462).toFixed(2);}
+
+// ===== COMPARISON =====
+function runComparison(){const aL=parseFloat(document.getElementById('cmp-aL').value)||25,aW=parseFloat(document.getElementById('cmp-aW').value)||10,ad1=parseFloat(document.getElementById('cmp-ad1').value)||1.2,ad2=parseFloat(document.getElementById('cmp-ad2').value)||2.5,bL=parseFloat(document.getElementById('cmp-bL').value)||20,bW=parseFloat(document.getElementById('cmp-bW').value)||12,bd1=parseFloat(document.getElementById('cmp-bd1').value)||1.0,bd2=parseFloat(document.getElementById('cmp-bd2').value)||3.0;const aVol=aW*aL*(ad1+ad2)/2,bVol=bW*bL*(bd1+bd2)/2;document.getElementById('cmp-result').style.display='block';const canvas=document.getElementById('cmpBarCanvas');if(canvas){const ctx=canvas.getContext('2d'),Wc=canvas.width,Hc=canvas.height;ctx.clearRect(0,0,Wc,Hc);ctx.fillStyle='#061a28';ctx.fillRect(0,0,Wc,Hc);const maxVol=Math.max(aVol,bVol)*1.2,barW=80,gap=60,startX=(Wc-2*barW-gap)/2,baseY=Hc-50,scale=(Hc-100)/maxVol;ctx.fillStyle='rgba(0,180,216,0.7)';ctx.fillRect(startX,baseY-aVol*scale,barW,aVol*scale);ctx.fillStyle='#fff';ctx.font='bold 12px "JetBrains Mono"';ctx.textAlign='center';ctx.fillText(`A\n${aVol.toFixed(1)}m³`,startX+barW/2,baseY-aVol*scale-10);ctx.fillStyle='rgba(239,71,111,0.7)';ctx.fillRect(startX+barW+gap,baseY-bVol*scale,barW,bVol*scale);ctx.fillText(`B\n${bVol.toFixed(1)}m³`,startX+barW+gap+barW/2,baseY-bVol*scale-10);}document.getElementById('cmp-table').innerHTML=`<table class="data-table"><tr><th>Parameter</th><th>Kolam A</th><th>Kolam B</th></tr><tr><td>Dimensi</td><td>${aL}×${aW}m</td><td>${bL}×${bW}m</td></tr><tr><td>Kedalaman</td><td>${ad1}–${ad2}m</td><td>${bd1}–${bd2}m</td></tr><tr><td>Volume</td><td><strong class="gold">${aVol.toFixed(1)} m³</strong></td><td><strong class="gold">${bVol.toFixed(1)} m³</strong></td></tr><tr><td>Kapasitas</td><td>${Math.round(aVol*1000).toLocaleString('id-ID')} L</td><td>${Math.round(bVol*1000).toLocaleString('id-ID')} L</td></tr></table>`;const diff=Math.abs(aVol-bVol),larger=aVol>bVol?'A':'B';document.getElementById('cmp-verdict').innerHTML=`<div style="text-align:center;"><div style="font-size:1.1rem;font-weight:600;">🏆 Kolam ${larger} lebih besar ${((diff/Math.min(aVol,bVol))*100).toFixed(1)}%</div><div style="color:rgba(255,255,255,0.5);margin-top:8px;">Selisih: <strong>${diff.toFixed(2)} m³</strong> ≈ <strong>${Math.round(diff*1000).toLocaleString('id-ID')} Liter</strong></div></div>`;}
+
+// ===== INIT =====
+document.addEventListener('DOMContentLoaded',function(){loadHistory();drawPoolPreview();convVolume('m3');convLength('m');convWeight('kg');console.log('🌊 AquaCalc Pro v2.0 siap!');});
+</script>
+</body>
+</html>
